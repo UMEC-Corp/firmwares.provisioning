@@ -1,0 +1,29 @@
+idf_component_register(
+    SRCS
+        "src/core_app.cpp"
+        "src/core_ble.cpp"
+        "src/core_button_led.cpp"
+        "src/core_data_queue.cpp"
+        "src/core_http.cpp"
+        "src/core_mqtt.cpp"
+        "src/core_mqtt_process.cpp"
+        "src/core_storage.cpp"
+    INCLUDE_DIRS "include"
+    PRIV_INCLUDE_DIRS "src"
+    REQUIRES
+        driver
+        esp_event
+        esp_http_client
+        esp_netif
+        esp_timer
+        esp_wifi
+        json
+        mqtt
+        nvs_flash
+        app_update
+        esp_partition
+        esp_system
+        spiffs
+        bt
+        esp-nimble-cpp
+)

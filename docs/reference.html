@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Core Reference</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    [data-lang] { display: none; }
+    html.lang-ru [data-lang="ru"] { display: revert; }
+    html.lang-en [data-lang="en"] { display: revert; }
+  </style>
+</head>
+<body data-page-key="reference" data-title-ru="Core Reference" data-title-en="Core Reference">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand brand-logo">
+        <img class="brand-logo-img" src="assets/umec_space_logo.png" alt="UMEC Space logo">
+      </div>
+      <div class="controls">
+        <div class="lang-switch" aria-label="Language switch">
+          <button id="lang-ru" type="button">RU</button>
+          <button id="lang-en" type="button">EN</button>
+        </div>
+      </div>
+      <div class="sidebar-block">
+        <p class="nav-label" data-lang="ru">Documentation</p>
+        <p class="nav-label" data-lang="en">Documentation</p>
+        <ul id="page-nav" class="sidebar-links"></ul>
+      </div>
+    </aside>
+    <main class="content">
+      <section class="hero page-intro">
+        <p class="eyebrow">Technical Reference</p>
+        <h2 data-lang="ru">Core Reference</h2>
+        <h2 data-lang="en">Core Reference</h2>
+        <p class="hero-lead" data-lang="ru">Reference tables for persisted state, MQTT topics, LED/button behavior, and centralized runtime constants.</p>
+        <p class="hero-lead" data-lang="en">Reference tables for persisted state, MQTT topics, LED/button behavior, and centralized runtime constants.</p>
+      </section>
+
+      <section class="section-list">
+        <section class="section-card" id="persisted-state">
+          <header><div><h3 data-lang="ru">1. Persisted State</h3><h3 data-lang="en">1. Persisted State</h3></div></header>
+          <p data-lang="ru">Persisted state is split across `wifi`, `corecfg`, and `time` namespaces. Empty values are erased when saved so NVS stays semantically clean.</p>
+          <p data-lang="en">Persisted state is split across `wifi`, `corecfg`, and `time` namespaces. Empty values are erased when saved so NVS stays semantically clean.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Namespace</th><th>Key</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>wifi</td><td><code>ssid</code></td><td>Saved Wi-Fi SSID</td></tr>
+                <tr><td>wifi</td><td><code>password</code></td><td>Saved Wi-Fi password</td></tr>
+                <tr><td>corecfg</td><td><code>auth_url</code></td><td>Authorization endpoint URL</td></tr>
+                <tr><td>corecfg</td><td><code>token_url</code></td><td>Token endpoint URL</td></tr>
+                <tr><td>corecfg</td><td><code>mqtt_url</code></td><td>Broker address</td></tr>
+                <tr><td>corecfg</td><td><code>cloud_api</code></td><td>Cloud API URL</td></tr>
+                <tr><td>corecfg</td><td><code>config_url</code></td><td>Remote config URL</td></tr>
+                <tr><td>corecfg</td><td><code>access_tok</code></td><td>Access token</td></tr>
+                <tr><td>corecfg</td><td><code>refresh_tok</code></td><td>Refresh token</td></tr>
+                <tr><td>corecfg</td><td><code>device_code</code></td><td>Device-code state</td></tr>
+                <tr><td>corecfg</td><td><code>user_code</code></td><td>User-facing authorization code</td></tr>
+                <tr><td>corecfg</td><td><code>verify_url</code></td><td>Verification URL</td></tr>
+                <tr><td>corecfg</td><td><code>expires_in</code></td><td>Token lifetime metadata used by proactive refresh</td></tr>
+                <tr><td>time</td><td><code>saved_time</code></td><td>Last known good Unix timestamp</td></tr>
+                <tr><td>time</td><td><code>rtc_offset</code></td><td>Offset used to restore time on boot</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="mqtt-topics">
+          <header><div><h3 data-lang="ru">2. MQTT Topics and Routes</h3><h3 data-lang="en">2. MQTT Topics and Routes</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Topic</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>command/&lt;chip_id&gt;/upgrade</code></td><td>Start OTA update</td></tr>
+                <tr><td><code>command/&lt;chip_id&gt;/reboot</code></td><td>Reboot the device</td></tr>
+                <tr><td><code>command/&lt;chip_id&gt;/reset</code></td><td>Clear persisted runtime credentials and reboot</td></tr>
+                <tr><td><code>command/&lt;chip_id&gt;/target-temp</code></td><td>Example numeric cloud command</td></tr>
+                <tr><td><code>stream/&lt;chip_id&gt;/rpcout</code></td><td>Device-data and telemetry output</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="led-button-contract">
+          <header><div><h3 data-lang="ru">3. LED and Button Contract</h3><h3 data-lang="en">3. LED and Button Contract</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+              <tbody>
+                <tr><td><code>Provisioning</code></td><td>Both LEDs blink fast</td></tr>
+                <tr><td><code>ConnectingWifi</code></td><td>Slow blink on status LED</td></tr>
+                <tr><td><code>WaitingToken</code></td><td>Status LED pulse</td></tr>
+                <tr><td><code>ConnectingMqtt</code></td><td>Status pulse plus activity slow blink</td></tr>
+                <tr><td><code>Online</code></td><td>Breathing pattern</td></tr>
+                <tr><td><code>Error</code></td><td>Fast blink on both LEDs</td></tr>
+                <tr><td><code>ButtonHold</code></td><td>Hold-confirmation feedback</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p data-lang="ru">The destructive reset path is evaluated on button release. Current threshold: <code>&gt;= 10000 ms</code>.</p>
+          <p data-lang="en">The destructive reset path is evaluated on button release. Current threshold: <code>&gt;= 10000 ms</code>.</p>
+        </section>
+
+        <section class="section-card" id="runtime-limits">
+          <header><div><h3 data-lang="ru">4. Runtime Limits and Periods</h3><h3 data-lang="en">4. Runtime Limits and Periods</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Name</th><th>Value</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td>BLE RX queue depth</td><td>8</td><td>Bounds bursts from BLE callback context</td></tr>
+                <tr><td>MQTT transport queue limit</td><td>64 messages</td><td>Protects RAM</td></tr>
+                <tr><td>dataQueue process period</td><td>500 ms</td><td>Logical telemetry queue drain cadence</td></tr>
+                <tr><td>Periodic maintenance sleep</td><td>30000 ms</td><td>Background maintenance loop period</td></tr>
+                <tr><td>Time sync period</td><td>24 h</td><td>SNTP synchronization cadence</td></tr>
+                <tr><td>Config refresh period</td><td>24 h</td><td>Remote config refresh cadence</td></tr>
+                <tr><td>Token refresh cooldown</td><td>30 s</td><td>Prevents aggressive token retry loops</td></tr>
+                <tr><td>Network recovery cooldown</td><td>60 s</td><td>Prevents repeated hard Wi-Fi/MQTT recovery loops</td></tr>
+                <tr><td>MQTT token refresh threshold</td><td>3 failures</td><td>Escalates repeated broker failures into token refresh</td></tr>
+                <tr><td>MQTT hard recovery threshold</td><td>5 failures</td><td>Escalates repeated broker failures into hard Wi-Fi restart</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="assets/page.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="assets/mermaid-init.js"></script>
+</body>
+</html>

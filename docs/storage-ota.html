@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Storage, Time, and OTA</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    [data-lang] { display: none; }
+    html.lang-ru [data-lang="ru"] { display: revert; }
+    html.lang-en [data-lang="en"] { display: revert; }
+  </style>
+</head>
+<body data-page-key="storage" data-title-ru="Хранение, время и OTA" data-title-en="Storage, Time, and OTA">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand brand-logo">
+        <img class="brand-logo-img" src="assets/umec_space_logo.png" alt="UMEC Space logo">
+      </div>
+      <div class="controls">
+        <div class="lang-switch" aria-label="Language switch">
+          <button id="lang-ru" type="button">RU</button>
+          <button id="lang-en" type="button">EN</button>
+        </div>
+      </div>
+      <div class="sidebar-block">
+        <p class="nav-label" data-lang="ru">Разделы документации</p>
+        <p class="nav-label" data-lang="en">Documentation</p>
+        <ul id="page-nav" class="sidebar-links"></ul>
+      </div>
+    </aside>
+    <main class="content">
+      <section class="hero page-intro">
+        <p class="eyebrow">Technical Volume</p>
+        <h2 data-lang="ru">Хранение, время и OTA</h2>
+        <h2 data-lang="en">Storage, Time, and OTA</h2>
+        <p class="hero-lead" data-lang="ru">Подробный том по модели хранения конфигурации, валидности времени, remote config refresh и безопасному OTA path.</p>
+        <p class="hero-lead" data-lang="en">Detailed volume for the persistence model, time validity, remote config refresh, and the safe OTA path.</p>
+      </section>
+
+      <section class="section-list">
+        <section class="section-card" id="persistent-data-model">
+          <header><div><h3 data-lang="ru">1. Persistent data model</h3><h3 data-lang="en">1. Persistent Data Model</h3></div></header>
+          <p data-lang="ru">Persistence layer хранит только bootstrap/cloud state. Это хороший проектный выбор: transport flags, live connectivity bits и transient workers не попадают в NVS. Благодаря этому reboot возвращает system intent, а не случайный runtime residue.</p>
+          <p data-lang="en">The persistence layer stores only bootstrap and cloud state. That is a good project decision: transport flags, live connectivity bits, and transient worker state do not leak into NVS. As a result, reboot restores system intent rather than random runtime residue.</p>
+          <div class="diagram-card">
+            <div class="diagram-title" data-lang="ru">Контур хранения и обслуживания</div>
+            <div class="diagram-title" data-lang="en">Storage and Maintenance Loop</div>
+            <pre class="mermaid">flowchart LR
+    BLE[Provisioning Input]
+    NVS[(NVS Namespaces)]
+    TIME[Time Restore]
+    MAINT[Maintenance Task]
+    CFG[Remote Config]
+    OTA[OTA Worker]
+    MQTT[MQTT Runtime]
+
+    BLE --> NVS
+    NVS --> TIME
+    NVS --> MQTT
+    MAINT --> CFG
+    CFG --> NVS
+    MAINT --> OTA
+    MAINT --> MQTT
+    TIME --> MQTT
+
+    classDef core fill:#dcecef,stroke:#0e5a61,color:#1e2430,stroke-width:1.5px;
+    classDef edge fill:#f5e1d8,stroke:#b54f2d,color:#1e2430,stroke-width:1.5px;
+    class BLE,TIME,MAINT,CFG,OTA,MQTT core;
+    class NVS edge;</pre>
+          </div>
+          <ul class="callout-list">
+            <li data-lang="ru">Пустые значения стирают ключи, а не хранятся как пустые, но существующие записи.</li>
+            <li data-lang="en">Empty values erase keys instead of being kept as present but empty records.</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="time-validity">
+          <header><div><h3 data-lang="ru">2. Time validity как gate для telemetry</h3><h3 data-lang="en">2. Time Validity as a Telemetry Gate</h3></div></header>
+          <p data-lang="ru">Телеметрия не публикуется, пока <code>has_valid_time()</code> не вернет true. В текущем коде валидным считается Unix time не раньше <code>2017-01-01</code>. Это защищает облако от заведомо мусорных timestamps сразу после boot.</p>
+          <p data-lang="en">Telemetry is not published until <code>has_valid_time()</code> returns true. In the current code, valid time means a Unix timestamp no earlier than <code>2017-01-01</code>. This protects the cloud from obviously bad timestamps right after boot.</p>
+          <pre><code>Boot
+-> restore time from NVS if possible
+-> allow telemetry only if restored/synced time is sane
+-> later resync with SNTP
+-> persist a new good snapshot back into NVS</code></pre>
+        </section>
+
+        <section class="section-card" id="remote-config-refresh">
+          <header><div><h3 data-lang="ru">3. Remote config refresh</h3><h3 data-lang="en">3. Remote Config Refresh</h3></div></header>
+          <p data-lang="ru">При наличии сети и заданного <code>configUrl</code> background maintenance task примерно раз в сутки вызывает <code>fetch_and_store_remote_config()</code>. Функция не просто парсит ответ, но и строит human-readable change log для логов, перечисляя какие именно URL changed.</p>
+          <p data-lang="en">When network connectivity exists and <code>configUrl</code> is set, the background maintenance task calls <code>fetch_and_store_remote_config()</code> roughly once per day. The function not only parses the response but also builds a human-readable change log describing which URLs changed.</p>
+        </section>
+
+        <section class="section-card" id="ota-execution-path">
+          <header><div><h3 data-lang="ru">4. OTA execution path</h3><h3 data-lang="en">4. OTA Execution Path</h3></div></header>
+          <p data-lang="ru">OTA route starts from MQTT command <code>upgrade</code>. Дальше firmware открывает HTTP client, получает next update partition, начинает OTA session через <code>esp_ota_begin()</code>, читает бинарный поток блоками по 1024 байта и пишет их через <code>esp_ota_write()</code>. Только после успешного <code>esp_ota_end()</code> вызывается <code>esp_ota_set_boot_partition()</code>.</p>
+          <p data-lang="en">The OTA route starts from the MQTT <code>upgrade</code> command. The firmware then opens an HTTP client, obtains the next update partition, begins an OTA session with <code>esp_ota_begin()</code>, reads the binary stream in 1024-byte blocks, and writes those blocks via <code>esp_ota_write()</code>. Only after a successful <code>esp_ota_end()</code> does it call <code>esp_ota_set_boot_partition()</code>.</p>
+          <div class="diagram-card">
+            <div class="diagram-title" data-lang="ru">Поток OTA</div>
+            <div class="diagram-title" data-lang="en">OTA Flow</div>
+            <pre class="mermaid">sequenceDiagram
+    participant Cloud as UMEC Cloud
+    participant MQTT as MQTT Route
+    participant HTTP as HTTP Client
+    participant OTA as OTA Session
+    participant Boot as Boot Partition
+
+    Cloud->>MQTT: upgrade with image URL
+    MQTT->>HTTP: fetch binary stream
+    HTTP->>OTA: esp_ota_begin()
+    loop 1024-byte blocks
+      HTTP->>OTA: esp_ota_write()
+    end
+    HTTP->>OTA: esp_ota_end()
+    OTA->>Boot: esp_ota_set_boot_partition()
+    Boot-->>MQTT: restart into new image</pre>
+          </div>
+        </section>
+
+        <section class="section-card" id="risks-notes">
+          <header><div><h3 data-lang="ru">5. Risks and engineering notes</h3><h3 data-lang="en">5. Risks and Engineering Notes</h3></div></header>
+          <ul class="callout-list">
+            <li data-lang="ru">HTTP helper serializes transport ownership against <code>mqtt_client_mutex</code>, потому что HTTP и MQTT делят TLS-related resources.</li>
+            <li data-lang="en">The HTTP helper serializes transport ownership against <code>mqtt_client_mutex</code> because HTTP and MQTT share TLS-related resources.</li>
+            <li data-lang="ru"><code>ota_in_progress</code> это guard против повторного параллельного OTA запуска.</li>
+            <li data-lang="en"><code>ota_in_progress</code> is the guard that prevents duplicate concurrent OTA attempts.</li>
+          </ul>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="assets/page.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="assets/mermaid-init.js"></script>
+</body>
+</html>

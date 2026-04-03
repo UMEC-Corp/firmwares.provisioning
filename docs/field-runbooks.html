@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Device Troubleshooting and Recovery</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    [data-lang] { display: none; }
+    html.lang-ru [data-lang="ru"] { display: revert; }
+    html.lang-en [data-lang="en"] { display: revert; }
+  </style>
+</head>
+<body data-page-key="runbooks" data-title-ru="Device Troubleshooting and Recovery" data-title-en="Device Troubleshooting and Recovery">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand brand-logo">
+        <img class="brand-logo-img" src="assets/umec_space_logo.png" alt="UMEC Space logo">
+      </div>
+      <div class="controls">
+        <div class="lang-switch" aria-label="Language switch">
+          <button id="lang-ru" type="button">RU</button>
+          <button id="lang-en" type="button">EN</button>
+        </div>
+      </div>
+      <div class="sidebar-block">
+        <p class="nav-label" data-lang="ru">Documentation</p>
+        <p class="nav-label" data-lang="en">Documentation</p>
+        <ul id="page-nav" class="sidebar-links"></ul>
+      </div>
+    </aside>
+    <main class="content">
+      <section class="hero page-intro">
+        <p class="eyebrow">Operational Volume</p>
+        <h2 data-lang="ru">Device Troubleshooting and Recovery</h2>
+        <h2 data-lang="en">Device Troubleshooting and Recovery</h2>
+        <p class="hero-lead" data-lang="ru">Quick operational guidance for online-state diagnosis, provisioning recovery, token issues, MQTT reconnect failures, and OTA problems.</p>
+        <p class="hero-lead" data-lang="en">Quick operational guidance for online-state diagnosis, provisioning recovery, token issues, MQTT reconnect failures, and OTA problems.</p>
+      </section>
+
+      <section class="section-list">
+        <section class="section-card" id="online-state">
+          <header><div><h3 data-lang="ru">1. If the Device Does Not Reach Online State</h3><h3 data-lang="en">1. If the Device Does Not Reach Online State</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Observation</th><th>Likely layer</th><th>What to check</th></tr></thead>
+              <tbody>
+                <tr><td>Fast blinking right after boot</td><td>Provisioning / no Wi-Fi credentials</td><td>Saved SSID, BLE onboarding, provisioning completion</td></tr>
+                <tr><td>Slow status LED blink</td><td>Wi-Fi link</td><td>SSID/password correctness, AP reachability, DHCP/connectivity</td></tr>
+                <tr><td>Status pulse without online state</td><td>Authorization or MQTT</td><td>Token presence, token expiry, broker URL, reconnect logs</td></tr>
+                <tr><td>Network is up but no telemetry</td><td>Time validity or threshold policy</td><td>NTP/time restore status, threshold suppression, queue drain activity</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="provisioning-recovery">
+          <header><div><h3 data-lang="ru">2. Provisioning Recovery</h3><h3 data-lang="en">2. Provisioning Recovery</h3></div></header>
+          <ul class="callout-list">
+            <li data-lang="ru">Press and hold the button.</li>
+            <li data-lang="en">Press and hold the button.</li>
+            <li data-lang="ru">Wait for hold feedback.</li>
+            <li data-lang="en">Wait for hold feedback.</li>
+            <li data-lang="ru">Release before 10 seconds: no destructive action.</li>
+            <li data-lang="en">Release before 10 seconds: no destructive action.</li>
+            <li data-lang="ru">Release at or after 10 seconds: runtime credentials are cleared and the device reboots into provisioning-ready state.</li>
+            <li data-lang="en">Release at or after 10 seconds: runtime credentials are cleared and the device reboots into provisioning-ready state.</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="mqtt-recovery">
+          <header><div><h3 data-lang="ru">3. MQTT Recovery Diagnosis</h3><h3 data-lang="en">3. MQTT Recovery Diagnosis</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Observed in logs</th><th>Meaning</th><th>Expected next action</th></tr></thead>
+              <tbody>
+                <tr><td>`MQTT reconnect attempt failed`</td><td>Normal reconnect has not succeeded yet</td><td>Reconnect supervisor keeps rebuilding the client</td></tr>
+                <tr><td>`forcing token refresh`</td><td>3 consecutive MQTT failures reached</td><td>Refresh token flow is attempted</td></tr>
+                <tr><td>`performing WiFi/MQTT hard reconnect`</td><td>5 consecutive failures reached and cooldown allows escalation</td><td>MQTT client is destroyed and Wi-Fi STA is restarted</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="telemetry-diagnostics">
+          <header><div><h3 data-lang="ru">4. Telemetry Diagnostics</h3><h3 data-lang="en">4. Telemetry Diagnostics</h3></div></header>
+          <ul class="callout-list">
+            <li data-lang="ru">Missing telemetry with Wi-Fi up does not automatically mean MQTT transport is broken.</li>
+            <li data-lang="en">Missing telemetry with Wi-Fi up does not automatically mean MQTT transport is broken.</li>
+            <li data-lang="ru">Check whether time has been restored or synchronized; telemetry is gated until time is valid.</li>
+            <li data-lang="en">Check whether time has been restored or synchronized; telemetry is gated until time is valid.</li>
+            <li data-lang="ru">Check whether logical telemetry items are being coalesced or suppressed by threshold rules.</li>
+            <li data-lang="en">Check whether logical telemetry items are being coalesced or suppressed by threshold rules.</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="ota-diagnostics">
+          <header><div><h3 data-lang="ru">5. OTA Path Diagnostics</h3><h3 data-lang="en">5. OTA Path Diagnostics</h3></div></header>
+          <p data-lang="ru">OTA starts from the MQTT `upgrade` route. If an image is not applied, check URL correctness, endpoint reachability, whether another OTA session is already active, and whether the update partition write completed successfully.</p>
+          <p data-lang="en">OTA starts from the MQTT `upgrade` route. If an image is not applied, check URL correctness, endpoint reachability, whether another OTA session is already active, and whether the update partition write completed successfully.</p>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="assets/page.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="assets/mermaid-init.js"></script>
+</body>
+</html>

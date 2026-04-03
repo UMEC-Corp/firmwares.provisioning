@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP-IDF Connectivity Component for UMEC Space IoT Cloud</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand brand-logo">
+        <img class="brand-logo-img" src="assets/umec_space_logo.png" alt="UMEC Space logo">
+      </div>
+
+      <div class="controls">
+        <div class="lang-switch" aria-label="Language switch">
+          <button id="lang-ru" type="button">RU</button>
+          <button id="lang-en" type="button">EN</button>
+        </div>
+      </div>
+
+      <div class="sidebar-block">
+        <p id="nav-label" class="nav-label"></p>
+        <ul id="nav-list" class="sidebar-links"></ul>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <p class="eyebrow" id="hero-kicker"></p>
+        <h2 id="hero-title"></h2>
+        <p id="hero-lead" class="hero-lead"></p>
+        <div class="hero-note" id="hero-note"></div>
+      </section>
+
+      <section class="section-card">
+        <header>
+          <div>
+            <h3 data-lang="ru">Карта компонента</h3>
+            <h3 data-lang="en">Component Map</h3>
+            <div class="section-meta" data-lang="ru">Общий визуальный обзор runtime-слоя</div>
+            <div class="section-meta" data-lang="en">High-level visual overview of the runtime layer</div>
+          </div>
+        </header>
+        <div class="diagram-card">
+          <div class="diagram-title" data-lang="ru">Архитектурная схема</div>
+          <div class="diagram-title" data-lang="en">Architecture Diagram</div>
+          <pre class="mermaid">flowchart LR
+    APP[Product App]
+    BLE[BLE Provisioning]
+    STORE[Config Storage]
+    AUTH[Auth and Tokens]
+    MQTT[MQTT Runtime]
+    QUEUE[Telemetry Queue]
+    HTTP[Remote Config and OTA]
+    UX[Button and LED]
+    CLOUD[UMEC Space IoT Cloud]
+
+    APP -->|init and producers| QUEUE
+    APP -->|hardware config| UX
+    BLE --> STORE
+    BLE --> AUTH
+    STORE --> MQTT
+    STORE --> HTTP
+    AUTH --> MQTT
+    QUEUE --> MQTT
+    HTTP --> STORE
+    MQTT --> CLOUD
+    CLOUD --> MQTT
+    MQTT --> UX
+    BLE --> UX
+
+    classDef core fill:#dcecef,stroke:#0e5a61,color:#1e2430,stroke-width:1.5px;
+    classDef edge fill:#f5e1d8,stroke:#b54f2d,color:#1e2430,stroke-width:1.5px;
+    classDef ext fill:#f4efe6,stroke:#5f6b7a,color:#1e2430,stroke-width:1.5px;
+    class APP,CLOUD ext;
+    class BLE,STORE,AUTH,MQTT,QUEUE,HTTP,UX core;</pre>
+        </div>
+      </section>
+
+      <section id="volume-list"></section>
+      <section id="section-list" class="section-list"></section>
+    </main>
+  </div>
+
+  <script src="assets/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="assets/mermaid-init.js"></script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MQTT and Cloud Runtime</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    [data-lang] { display: none; }
+    html.lang-ru [data-lang="ru"] { display: revert; }
+    html.lang-en [data-lang="en"] { display: revert; }
+  </style>
+</head>
+<body data-page-key="mqtt" data-title-ru="MQTT and Cloud Runtime" data-title-en="MQTT and Cloud Runtime">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand brand-logo">
+        <img class="brand-logo-img" src="assets/umec_space_logo.png" alt="UMEC Space logo">
+      </div>
+      <div class="controls">
+        <div class="lang-switch" aria-label="Language switch">
+          <button id="lang-ru" type="button">RU</button>
+          <button id="lang-en" type="button">EN</button>
+        </div>
+      </div>
+      <div class="sidebar-block">
+        <p class="nav-label" data-lang="ru">Documentation</p>
+        <p class="nav-label" data-lang="en">Documentation</p>
+        <ul id="page-nav" class="sidebar-links"></ul>
+      </div>
+    </aside>
+    <main class="content">
+      <section class="hero page-intro">
+        <p class="eyebrow">Technical Volume</p>
+        <h2 data-lang="ru">MQTT and Cloud Runtime</h2>
+        <h2 data-lang="en">MQTT and Cloud Runtime</h2>
+        <p class="hero-lead" data-lang="ru">Current `core` MQTT behavior: client rebuilds from persisted config, token lifecycle is maintained proactively, and repeated failures escalate into stronger recovery steps.</p>
+        <p class="hero-lead" data-lang="en">Current `core` MQTT behavior: client rebuilds from persisted config, token lifecycle is maintained proactively, and repeated failures escalate into stronger recovery steps.</p>
+      </section>
+
+      <section class="section-list">
+        <section class="section-card" id="connection-lifecycle">
+          <header><div><h3 data-lang="ru">1. Connection Lifecycle</h3><h3 data-lang="en">1. Connection Lifecycle</h3></div></header>
+          <p data-lang="ru">`core_mqtt.cpp` does not mutate one long-lived client in place. The reconnect supervisor reloads `RuntimeConfig`, rebuilds the broker URI, destroys any old client handle, and starts a fresh MQTT session from current persisted state.</p>
+          <p data-lang="en">`core_mqtt.cpp` does not mutate one long-lived client in place. The reconnect supervisor reloads `RuntimeConfig`, rebuilds the broker URI, destroys any old client handle, and starts a fresh MQTT session from current persisted state.</p>
+          <div class="diagram-card">
+            <div class="diagram-title" data-lang="ru">Current MQTT lifecycle</div>
+            <div class="diagram-title" data-lang="en">Current MQTT lifecycle</div>
+            <pre class="mermaid">flowchart LR
+    CFG[RuntimeConfig]
+    WIFI[Wi-Fi Ready]
+    TOKEN[Access Token]
+    RECON[Reconnect Supervisor]
+    CLIENT[MQTT Client]
+    CLOUD[Broker]
+
+    CFG --> WIFI
+    WIFI --> TOKEN
+    TOKEN --> RECON
+    RECON --> CLIENT
+    CLIENT --> CLOUD
+    CLOUD --> CLIENT</pre>
+          </div>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Field</th><th>Current value</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td>Scheme</td><td><code>wss://</code></td><td>Broker URI is normalized to secure websocket form</td></tr>
+                <tr><td>Username</td><td><code>device-token</code></td><td>Fixed broker username</td></tr>
+                <tr><td>Password</td><td><code>access_token</code></td><td>Provisioned cloud access token</td></tr>
+                <tr><td>Keepalive</td><td>15 s</td><td>MQTT session liveness interval</td></tr>
+                <tr><td>Network timeout</td><td>3000 ms</td><td>Per-operation timeout budget</td></tr>
+                <tr><td>Reconnect timeout</td><td>5000 ms</td><td>Broker reconnect timeout passed to esp-mqtt</td></tr>
+                <tr><td>Transport queue</td><td>64 messages</td><td>Drop-oldest RAM bound for publish-ready MQTT messages</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="token-lifecycle">
+          <header><div><h3 data-lang="ru">2. Token Lifecycle</h3><h3 data-lang="en">2. Token Lifecycle</h3></div></header>
+          <p data-lang="ru">The current maintenance loop uses persisted `expires_in` metadata. Token refresh is not limited to `mqtt_connected == false`: the device now refreshes proactively before expiry, refreshes when token timing must be reconstructed after boot, and still refreshes when MQTT is down.</p>
+          <p data-lang="en">The current maintenance loop uses persisted `expires_in` metadata. Token refresh is not limited to `mqtt_connected == false`: the device now refreshes proactively before expiry, refreshes when token timing must be reconstructed after boot, and still refreshes when MQTT is down.</p>
+          <ul class="callout-list">
+            <li data-lang="ru">`expires_in` is persisted in NVS and restored on boot.</li>
+            <li data-lang="en">`expires_in` is persisted in NVS and restored on boot.</li>
+            <li data-lang="ru">Successful token exchange or refresh stamps `last_token_refresh_success_us`.</li>
+            <li data-lang="en">Successful token exchange or refresh stamps `last_token_refresh_success_us`.</li>
+            <li data-lang="ru">Refresh attempts are rate-limited by a cooldown so the maintenance loop does not hammer the cloud endpoint.</li>
+            <li data-lang="en">Refresh attempts are rate-limited by a cooldown so the maintenance loop does not hammer the cloud endpoint.</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="recovery-escalation">
+          <header><div><h3 data-lang="ru">3. Recovery Escalation</h3><h3 data-lang="en">3. Recovery Escalation</h3></div></header>
+          <p data-lang="ru">MQTT reconnect now uses explicit recovery thresholds. Normal reconnect remains the first line of defense, but repeated failures escalate into cloud-token repair and finally hard Wi-Fi/MQTT stack recovery.</p>
+          <p data-lang="en">MQTT reconnect now uses explicit recovery thresholds. Normal reconnect remains the first line of defense, but repeated failures escalate into cloud-token repair and finally hard Wi-Fi/MQTT stack recovery.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Threshold</th><th>Action</th><th>Current constant</th></tr></thead>
+              <tbody>
+                <tr><td>3 consecutive MQTT failures</td><td>Force refresh-token exchange when refresh token exists</td><td><code>kTokenRefreshFailureThreshold</code></td></tr>
+                <tr><td>5 consecutive MQTT failures</td><td>Destroy MQTT client, stop Wi-Fi STA, restart Wi-Fi, reconnect with persisted credentials</td><td><code>kNetworkRecoveryFailureThreshold</code></td></tr>
+                <tr><td>60 s recovery cooldown</td><td>Prevents repeated hard recovery thrash</td><td><code>kNetworkRecoveryCooldownUs</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="route-handling">
+          <header><div><h3 data-lang="ru">4. Route Handling</h3><h3 data-lang="en">4. Route Handling</h3></div></header>
+          <p data-lang="ru">`core_mqtt.cpp` remains transport-only. Route-specific logic stays in `core_mqtt_process.cpp`, so new cloud commands are added through the route table and semantic handler instead of inside the raw MQTT event callback.</p>
+          <p data-lang="en">`core_mqtt.cpp` remains transport-only. Route-specific logic stays in `core_mqtt_process.cpp`, so new cloud commands are added through the route table and semantic handler instead of inside the raw MQTT event callback.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Route</th><th>Match</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td><code>command/&lt;chip_id&gt;/upgrade</code></td><td>Exact</td><td>OTA update and reboot on success</td></tr>
+                <tr><td><code>command/&lt;chip_id&gt;/reboot</code></td><td>Exact</td><td>Immediate reboot</td></tr>
+                <tr><td><code>command/&lt;chip_id&gt;/reset</code></td><td>Exact</td><td>Clear runtime credentials and reboot</td></tr>
+                <tr><td><code>command/&lt;chip_id&gt;/target-temp</code></td><td>Exact</td><td>Forward numeric payload into app-level temperature handler</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="queue-layering">
+          <header><div><h3 data-lang="ru">5. Queue Layering and Diagnostics</h3><h3 data-lang="en">5. Queue Layering and Diagnostics</h3></div></header>
+          <p data-lang="ru">The runtime uses two bounded queues: `dataQueue` owns semantic telemetry coalescing, while `mqtt_queue` stores already-built transport messages. This split keeps telemetry rules independent from MQTT transport timing.</p>
+          <p data-lang="en">The runtime uses two bounded queues: `dataQueue` owns semantic telemetry coalescing, while `mqtt_queue` stores already-built transport messages. This split keeps telemetry rules independent from MQTT transport timing.</p>
+          <ul class="callout-list">
+            <li data-lang="ru">MQTT logs include broker URI, subscriptions, incoming routes, and publish activity.</li>
+            <li data-lang="en">MQTT logs include broker URI, subscriptions, incoming routes, and publish activity.</li>
+            <li data-lang="ru">Recovery logs show whether the device is in normal reconnect, token refresh, or hard recovery mode.</li>
+            <li data-lang="en">Recovery logs show whether the device is in normal reconnect, token refresh, or hard recovery mode.</li>
+          </ul>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="assets/page.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="assets/mermaid-init.js"></script>
+</body>
+</html>

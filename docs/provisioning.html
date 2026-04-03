@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Provisioning and Bootstrap</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    [data-lang] { display: none; }
+    html.lang-ru [data-lang="ru"] { display: revert; }
+    html.lang-en [data-lang="en"] { display: revert; }
+  </style>
+</head>
+<body data-page-key="provisioning" data-title-ru="Provisioning and Bootstrap" data-title-en="Provisioning and Bootstrap">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand brand-logo">
+        <img class="brand-logo-img" src="assets/umec_space_logo.png" alt="UMEC Space logo">
+      </div>
+      <div class="controls">
+        <div class="lang-switch" aria-label="Language switch">
+          <button id="lang-ru" type="button">RU</button>
+          <button id="lang-en" type="button">EN</button>
+        </div>
+      </div>
+      <div class="sidebar-block">
+        <p class="nav-label" data-lang="ru">Documentation</p>
+        <p class="nav-label" data-lang="en">Documentation</p>
+        <ul id="page-nav" class="sidebar-links"></ul>
+      </div>
+    </aside>
+    <main class="content">
+      <section class="hero page-intro">
+        <p class="eyebrow">Technical Volume</p>
+        <h2 data-lang="ru">Provisioning and Bootstrap</h2>
+        <h2 data-lang="en">Provisioning and Bootstrap</h2>
+        <p class="hero-lead" data-lang="ru">Current provisioning baseline covers BLE transport, Wi-Fi/bootstrap data storage, device-code authorization, token completion, and recovery back to provisioning state.</p>
+        <p class="hero-lead" data-lang="en">Current provisioning baseline covers BLE transport, Wi-Fi/bootstrap data storage, device-code authorization, token completion, and recovery back to provisioning state.</p>
+      </section>
+
+      <section class="section-list">
+        <section class="section-card" id="contract">
+          <header><div><h3 data-lang="ru">1. BLE Contract</h3><h3 data-lang="en">1. BLE Contract</h3></div></header>
+          <p data-lang="ru">BLE UUIDs and the advertised device name are part of the mobile application contract. They are centralized in `core_runtime_constants.h`, which makes the external contract easier to audit and safer to reuse.</p>
+          <p data-lang="en">BLE UUIDs and the advertised device name are part of the mobile application contract. They are centralized in `core_runtime_constants.h`, which makes the external contract easier to audit and safer to reuse.</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Field</th><th>Current value</th><th>Source</th></tr></thead>
+              <tbody>
+                <tr><td>Service UUID</td><td><code>4fafc201-1fb5-459e-8fcc-c5c9c331914b</code></td><td><code>core_runtime_constants.h</code></td></tr>
+                <tr><td>RX UUID</td><td><code>beb5483e-36e1-4688-b7f5-ea07361b26a8</code></td><td><code>core_runtime_constants.h</code></td></tr>
+                <tr><td>TX UUID</td><td><code>beb5483e-36e1-4688-b7f5-ea07361b26a9</code></td><td><code>core_runtime_constants.h</code></td></tr>
+                <tr><td>Device name</td><td><code>ESP32_BLE</code></td><td><code>core_runtime_constants.h</code></td></tr>
+                <tr><td>BLE RX queue depth</td><td><code>8</code></td><td><code>core_runtime_constants.h</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="commands">
+          <header><div><h3 data-lang="ru">2. Provisioning Command Matrix</h3><h3 data-lang="en">2. Provisioning Command Matrix</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Input</th><th>Purpose</th><th>Firmware reaction</th></tr></thead>
+              <tbody>
+                <tr><td><code>ssid:password</code></td><td>Legacy Wi-Fi bootstrap</td><td>Stores SSID/password, persists them, attempts Wi-Fi connect</td></tr>
+                <tr><td><code>SERVER_DATA</code></td><td>Store cloud endpoints</td><td>Writes auth/token/mqtt/cloud/config URLs into persisted runtime config</td></tr>
+                <tr><td><code>GET_TOKEN</code></td><td>Start device-code flow</td><td>Waits for bounded device-code exchange and returns user-facing auth fields</td></tr>
+                <tr><td><code>CHECK_AUTH</code></td><td>Complete authorization</td><td>Polls token exchange until access token exists or timeout occurs</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p data-lang="ru">BLE responses are normalized as JSON with `command`, `isSuccess`, `error`, and `byteReceived`. Successful `GET_TOKEN` also returns device identity plus `user_code` and `verification_uri` data for the mobile app.</p>
+          <p data-lang="en">BLE responses are normalized as JSON with `command`, `isSuccess`, `error`, and `byteReceived`. Successful `GET_TOKEN` also returns device identity plus `user_code` and `verification_uri` data for the mobile app.</p>
+        </section>
+
+        <section class="section-card" id="timing">
+          <header><div><h3 data-lang="ru">3. Timing and Bounded Waits</h3><h3 data-lang="en">3. Timing and Bounded Waits</h3></div></header>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th>Constant</th><th>Value</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>kProvisioningTimeoutMs</code></td><td>20000</td><td>Upper bound for GET_TOKEN and CHECK_AUTH wait loops</td></tr>
+                <tr><td><code>kProvisioningRetryIntervalMs</code></td><td>3200</td><td>Retry interval for HTTP device-code and token requests</td></tr>
+                <tr><td><code>kBleCommandPollDelayMs</code></td><td>150 ms</td><td>Polling delay used while waiting for device-code results</td></tr>
+                <tr><td><code>kBleTokenPollDelayMs</code></td><td>100 ms</td><td>Polling delay used while waiting for access token completion</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section-card" id="token-state">
+          <header><div><h3 data-lang="ru">4. Persisted Token State</h3><h3 data-lang="en">4. Persisted Token State</h3></div></header>
+          <p data-lang="ru">Provisioning feeds the long-lived token lifecycle. `perform_token_exchange()` and `perform_token_refresh()` both persist `access_token`, `refresh_token`, and `expires_in`, and successful completion stamps runtime refresh timestamps used by maintenance logic.</p>
+          <p data-lang="en">Provisioning feeds the long-lived token lifecycle. `perform_token_exchange()` and `perform_token_refresh()` both persist `access_token`, `refresh_token`, and `expires_in`, and successful completion stamps runtime refresh timestamps used by maintenance logic.</p>
+          <ul class="callout-list">
+            <li data-lang="ru">`CHECK_AUTH` may be followed by MQTT reconnect request so the new token is used immediately.</li>
+            <li data-lang="en">`CHECK_AUTH` may be followed by MQTT reconnect request so the new token is used immediately.</li>
+            <li data-lang="ru">Provisioning and maintenance now share one token lifecycle instead of behaving like disconnected flows.</li>
+            <li data-lang="en">Provisioning and maintenance now share one token lifecycle instead of behaving like disconnected flows.</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="recovery">
+          <header><div><h3 data-lang="ru">5. Recovery and Local Reset</h3><h3 data-lang="en">5. Recovery and Local Reset</h3></div></header>
+          <p data-lang="ru">Current `core` recovery is release-driven. The button provides hold feedback first, and destructive reset is committed only on release at or after the configured threshold.</p>
+          <p data-lang="en">Current `core` recovery is release-driven. The button provides hold feedback first, and destructive reset is committed only on release at or after the configured threshold.</p>
+          <pre><code>Press button
+Wait for hold feedback
+Release before 10 s -> no destructive action
+Release at or after 10 s -> clear runtime credentials and reboot</code></pre>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="assets/page.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="assets/mermaid-init.js"></script>
+</body>
+</html>
